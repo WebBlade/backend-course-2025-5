@@ -1,8 +1,0 @@
-#GET Method
-curl http://localhost:3000/200
-
-#PUT Method
-curl -T 200.jpeg http://localhost:3000/200
-
-#DELETE Method
-curl -X DELETE http://localhost:3000/200

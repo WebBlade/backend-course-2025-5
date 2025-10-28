@@ -1,7 +1,7 @@
 import { Command } from "commander"
 import http from "http"
 import fs from "fs/promises"
-import url from "url"
+import request from "superagent"
 import path from "path"
 
 const program = new Command()
@@ -40,8 +40,14 @@ try {
 }
 
 const server = http.createServer(async (req, res) => {
-
     const { method, url} = req
+
+    if (url === '/') {
+        res.writeHead(400, { 'Content-Type': 'text/plain' })
+        res.end('Bad Request. Please specify an image code like /200')
+        return
+    }
+
     const imageCode = url.slice(1)
     const filePath = path.join(cachePath, `${imageCode}.jpg`)
 
@@ -51,8 +57,23 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { 'Content-Type': 'image/jpeg' })
             res.end(fileData)
         } catch (error) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' })
-            res.end('404 Not Found')
+            if(error.code === 'ENOENT'){
+                try {
+                    const httpCatRes = await request.get(`https://http.cat/${imageCode}`)
+                    const fileData = httpCatRes.body
+
+                    fs.writeFile(filePath, fileData)
+
+                    res.writeHead(200, { 'Content-Type': 'image/jpeg' })
+                    res.end(fileData)
+                } catch (error) {
+                    res.writeHead(404, { 'Content-Type': 'text/plain' })
+                    res.end('404 Not Found')
+                }
+            }else{
+                res.writeHead(404, { 'Content-Type': 'text/plain' })
+                res.end('404 Not Found')
+            }
         }
         
     }else if(method == 'PUT'){
